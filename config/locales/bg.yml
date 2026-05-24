@@ -1,0 +1,4 @@
+bg:
+  label_done_ratio_step_enabled: "Активирай"
+  label_done_ratio_step_step: "Стъпка (%)"
+  text_done_ratio_step_settings_hint: "По подразбиране: 5%. Засяга падащото меню % Done във формите за нова/редакция/масова редакция на задачи и context menu-то в списъка със задачи."

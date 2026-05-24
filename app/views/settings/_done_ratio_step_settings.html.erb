@@ -1,0 +1,12 @@
+<p>
+  <label><%= l(:label_done_ratio_step_enabled) %></label>
+  <%= check_box_tag 'settings[enabled]', '1', @settings['enabled'].to_s == '1' %>
+</p>
+
+<p>
+  <label><%= l(:label_done_ratio_step_step) %></label>
+  <%= select_tag 'settings[step]',
+      options_for_select([1, 2, 5, 10, 20, 25].map { |n| ["#{n} %", n.to_s] }, @settings['step'].to_s) %>
+  <br>
+  <em><%= l(:text_done_ratio_step_settings_hint) %></em>
+</p>
