@@ -35,7 +35,7 @@ From the Redmine root directory:
 
 ```bash
 cd /path/to/redmine
-git clone https://github.com/YOUR_GITHUB_USERNAME/redmine_done_ratio_step.git plugins/redmine_done_ratio_step
+git clone https://github.com/pavelstf/redmine_done_ratio_step.git plugins/redmine_done_ratio_step
 touch tmp/restart.txt
 ```
 
@@ -53,3 +53,11 @@ touch tmp/restart.txt
 
 ## Notes
 - This plugin changes **only the UI options**. Redmine continues storing `done_ratio` as an integer 0..100.
+
+## Development and project records
+
+- [Current handoff](HANDOFF.md)
+- [Verification and pending runtime checks](docs/TESTING.md)
+- [Historical package provenance](release_packages/README.md)
+
+`docs/archive/` preserves historical migration and deployment materials. Its deployment script is reference material requiring review before use. No production deployment is performed by the local verification commands.

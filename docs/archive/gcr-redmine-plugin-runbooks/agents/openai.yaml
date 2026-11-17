@@ -1,0 +1,7 @@
+interface:
+  display_name: "GCR Redmine Plugin Runbooks"
+  short_description: "Manual runbooks for GCR Redmine plugins"
+  default_prompt: "Use $gcr-redmine-plugin-runbooks to prepare manual staging or production instructions for this Redmine plugin."
+
+policy:
+  allow_implicit_invocation: true
