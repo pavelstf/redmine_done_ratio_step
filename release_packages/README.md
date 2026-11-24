@@ -1,5 +1,15 @@
 # Release packages
 
+## 1.0.7 for GCR production
+
+- File: `redmine_done_ratio_step-1.0.7-production-20261124.zip`
+- Size: 9,977 bytes
+- SHA-256: `1b10c111e283e1e6b884c30681752ed8f4f2842b8875c5f839726003216184d8`
+- Archive root: `redmine_done_ratio_step/`
+- Byte-identical to the staging-approved ZIP. The user confirmed the single marked, disabled 17% and the Tracker-filtered Status menu on production on 2026-11-24.
+- Production HTTP asset SHA-256: `8189a87085bca16e45c6e48a2167c7a5d47831e4b5882d505abef8632a4601b9`, matching the JavaScript entry in the ZIP.
+- Install and rollback commands: `docs/PRODUCTION-1.0.7.md`.
+
 ## 1.0.5 for GCR production
 
 - File: `redmine_done_ratio_step-1.0.5-production-20261124.zip`

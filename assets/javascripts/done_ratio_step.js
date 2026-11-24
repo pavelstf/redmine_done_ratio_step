@@ -60,8 +60,7 @@
       actualCurrent = currentValue;
     }
 
-    var values = [];
-    for (var v = 0; v <= 100; v += step) values.push(v);
+    var values = buildStepValues(step);
 
     if (actualCurrent !== null && values.indexOf(actualCurrent) === -1) {
       values.push(actualCurrent);
@@ -121,16 +120,21 @@
     return uniq;
   }
 
-  // ---- Context menu (% Done) fix ----
   function buildStepValues(step) {
     var vals = [];
-    for (var v = 0; v <= 100; v += step) vals.push(v);
+    for (var v = 0; v < 100; v += step) vals.push(v);
+    vals.push(100);
     return vals;
   }
 
-  function doneRatioAction(link) {
+  function percentLabelValue(link) {
     var label = /^\s*(\d{1,3})\s*%\s*$/.exec(link.textContent);
-    if (!label || Number(label[1]) > 100) return null;
+    return label && Number(label[1]) <= 100 ? Number(label[1]) : null;
+  }
+
+  function doneRatioAction(link) {
+    var percent = percentLabelValue(link);
+    if (percent === null) return null;
 
     var href = link.getAttribute("href") || "";
     var end = href.indexOf("#");
@@ -147,7 +151,7 @@
       var param = params[i];
       var match = /^(?:issue%5Bdone_ratio%5D|issue\[done_ratio\]|done_ratio)=(\d+)$/i.exec(param);
       if (match) {
-        if (index !== -1 || Number(match[1]) !== Number(label[1])) return null;
+        if (index !== -1 || Number(match[1]) !== percent) return null;
         index = i;
         action = param.slice(0, param.indexOf("=") + 1);
       } else if (/^issue(?:%5B|\[)/i.test(param)) {
@@ -198,7 +202,7 @@
       if (!entries.every(function (li) {
         var link = li.querySelector("a");
         return link && (doneRatioAction(link) ||
-          (link.getAttribute("href") === "#" && /^\s*\d{1,3}\s*%\s*$/.test(link.textContent)));
+          (link.getAttribute("href") === "#" && percentLabelValue(link) !== null));
       })) continue;
       template = anchors[i];
       buildHref = action;
@@ -215,11 +219,20 @@
     var disabled = new Map();
     items.forEach(function (li) {
       var link = li.querySelector("a");
-      if (link.getAttribute("href") === "#") disabled.set(parseInt(link.textContent, 10), li);
+      if (link.getAttribute("href") === "#") disabled.set(percentLabelValue(link), li);
       ul.removeChild(li);
     });
-    var titleText = function (pct) { return String(pct) + " %"; };
-
+    // The native menu may omit the saved percentage entirely. The single-issue
+    // response supplies a native selected item in an inert template in that case.
+    var currentTemplate = menu.querySelector("template[data-done-ratio-step-current]");
+    var currentItem = currentTemplate && currentTemplate.content.firstElementChild;
+    if (currentItem) {
+      var currentLink = currentItem.querySelector("a");
+      var currentValue = currentLink && percentLabelValue(currentLink);
+      if (currentValue !== null && currentLink.getAttribute("href") === "#" && !disabled.has(currentValue)) {
+        disabled.set(currentValue, currentItem.cloneNode(true));
+      }
+    }
     var values = uniqSortedNumeric(buildStepValues(step).concat(Array.from(disabled.keys())));
 
     values.forEach(function (pct) {
@@ -229,7 +242,7 @@
       }
       var li = document.createElement("li");
       var a = document.createElement("a");
-      a.textContent = titleText(pct);
+      a.textContent = String(pct) + "%";
 
       // Copy class/data attributes that Redmine uses (e.g. for ajax, data-method, etc.)
       for (var j = 0; j < template.attributes.length; j++) {

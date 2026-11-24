@@ -1,4 +1,4 @@
 en:
   label_done_ratio_step_enabled: "Enable"
   label_done_ratio_step_step: "Step (%)"
-  text_done_ratio_step_settings_hint: "Default: 5%. Affects the % Done dropdown in issue new/edit/bulk edit forms and the issues list context menu."
+  text_done_ratio_step_settings_hint: "Default: 5%. Applies to issue forms and the issue list context menu. While enabled, the plugin uses its own step in these controls. Disable it to use Redmine's built-in interval where available."
