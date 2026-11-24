@@ -128,20 +128,38 @@
     return vals;
   }
 
-  function replaceDoneRatioInUrl(url, value) {
-    // Match only a top-level action parameter, never text inside back_url.
-    var hashIndex = url.indexOf("#");
-    var fragment = hashIndex === -1 ? "" : url.slice(hashIndex);
-    var action = hashIndex === -1 ? url : url.slice(0, hashIndex);
-    return action.replace(
-      /([?&](?:issue%5Bdone_ratio%5D|issue\[done_ratio\]|done_ratio)=)\d+(?=&|$)/gi,
-      function (_match, prefix) { return prefix + String(value); }
-    ) + fragment;
-  }
+  function doneRatioAction(link) {
+    var label = /^\s*(\d{1,3})\s*%\s*$/.exec(link.textContent);
+    if (!label || Number(label[1]) > 100) return null;
 
-  function isDoneRatioHref(href) {
-    href = href || "";
-    return /[?&](?:issue%5Bdone_ratio%5D|issue\[done_ratio\]|done_ratio)=\d+(?=&|$)/i.test(href.split("#")[0]);
+    var href = link.getAttribute("href") || "";
+    var end = href.indexOf("#");
+    if (end === -1) end = href.length;
+    var start = href.indexOf("?");
+    if (start === -1 || start >= end) return null;
+
+    // Redmine's action URL has one issue field. Preserve all other bytes,
+    // including the return URL, when constructing a new percentage action.
+    var params = href.slice(start + 1, end).split("&");
+    var index = -1;
+    var action;
+    for (var i = 0; i < params.length; i++) {
+      var param = params[i];
+      var match = /^(?:issue%5Bdone_ratio%5D|issue\[done_ratio\]|done_ratio)=(\d+)$/i.exec(param);
+      if (match) {
+        if (index !== -1 || Number(match[1]) !== Number(label[1])) return null;
+        index = i;
+        action = param.slice(0, param.indexOf("=") + 1);
+      } else if (/^issue(?:%5B|\[)/i.test(param)) {
+        return null;
+      }
+    }
+    if (index === -1) return null;
+    return function (value) {
+      var updated = params.slice();
+      updated[index] = action + String(value);
+      return href.slice(0, start + 1) + updated.join("&") + href.slice(end);
+    };
   }
 
   function findContextMenuSubmenuList(menu, template) {
@@ -165,43 +183,50 @@
     var anchors = menu.querySelectorAll("a[href]");
     if (!anchors || !anchors.length) return;
 
-    // Use the first matching link as a template for URL structure
     var template = null;
+    var buildHref = null;
+    var ul = null;
+    var items = [];
     for (var i = 0; i < anchors.length; i++) {
-      var href = anchors[i].getAttribute("href") || "";
-      if (isDoneRatioHref(href)) {
-        template = anchors[i];
-        break;
-      }
+      var action = doneRatioAction(anchors[i]);
+      if (!action) continue;
+      var list = findContextMenuSubmenuList(menu, anchors[i]);
+      if (!list) continue;
+      var entries = Array.from(list.children);
+      // A real Redmine percentage submenu contains only percentage choices.
+      // Selected or disabled options have a "#" link and must keep their state.
+      if (!entries.every(function (li) {
+        var link = li.querySelector("a");
+        return link && (doneRatioAction(link) ||
+          (link.getAttribute("href") === "#" && /^\s*\d{1,3}\s*%\s*$/.test(link.textContent)));
+      })) continue;
+      template = anchors[i];
+      buildHref = action;
+      ul = list;
+      items = entries;
+      break;
     }
     if (!template) return;
-
-    // Identify the nested <ul> that contains the done ratio submenu items.
-    var ul = findContextMenuSubmenuList(menu, template);
-    if (!ul) return;
 
     // Avoid redoing work repeatedly for same step
     var key = "doneRatioStepContextApplied";
     if (ul.dataset[key] === String(step)) return;
 
-    // Remove only the done_ratio items inside this UL (keep other items if any)
-    var lis = Array.from(ul.children);
-    lis.forEach(function (li) {
-      if (!li || li.tagName.toLowerCase() !== "li") return;
-      var a = li.querySelector("a");
-      if (!a) return;
-      var href = a.getAttribute("href") || "";
-      if (isDoneRatioHref(href)) {
-        li.parentNode.removeChild(li);
-      }
+    var disabled = new Map();
+    items.forEach(function (li) {
+      var link = li.querySelector("a");
+      if (link.getAttribute("href") === "#") disabled.set(parseInt(link.textContent, 10), li);
+      ul.removeChild(li);
     });
-
-    var baseHref = template.getAttribute("href") || "#";
     var titleText = function (pct) { return String(pct) + " %"; };
 
-    var values = buildStepValues(step);
+    var values = uniqSortedNumeric(buildStepValues(step).concat(Array.from(disabled.keys())));
 
     values.forEach(function (pct) {
+      if (disabled.has(pct)) {
+        ul.appendChild(disabled.get(pct));
+        return;
+      }
       var li = document.createElement("li");
       var a = document.createElement("a");
       a.textContent = titleText(pct);
@@ -214,7 +239,7 @@
         }
       }
 
-      a.setAttribute("href", replaceDoneRatioInUrl(baseHref, pct));
+      a.setAttribute("href", buildHref(pct));
       li.appendChild(a);
       ul.appendChild(li);
     });

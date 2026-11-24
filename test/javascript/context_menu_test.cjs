@@ -102,3 +102,24 @@ test('retains the 1.0.4 protection for root-level percent actions', () => {
   assert.equal(fixture.percent.querySelectorAll('a').length, 5);
   assert.deepEqual(fixture.status.querySelectorAll('a').map(a => [a.textContent, a.getAttribute('href')]), fixture.originalStatus);
 });
+
+for (const statusSuffix of ['&back_url=/issues?done_ratio=20', '&issue%5Bdone_ratio%5D=20']) {
+  test(`ignores a status URL ending in ${statusSuffix}`, () => {
+    const fixture = runMenu({ statusSuffix });
+    assert.deepEqual(fixture.status.querySelectorAll('a').map(a => [a.textContent, a.getAttribute('href')]), fixture.originalStatus);
+    assert.equal(fixture.percent.querySelectorAll('a').length, 21);
+  });
+}
+
+test('leaves mixed submenus untouched even if one item looks like a percentage action', () => {
+  const fixture = runMenu({ mixedPercent: true });
+  assert.deepEqual(fixture.percent.querySelectorAll('a').map(a => a.textContent), ['0 %', '10 %', '100 %', 'In progress']);
+});
+
+test('retains a selected off-grid percentage in its disabled state', () => {
+  const links = runMenu({ selectedPercent: 37 }).percent.querySelectorAll('a');
+  assert.equal(links.length, 22);
+  const selected = links.find(a => a.textContent === '37%');
+  assert.equal(selected.getAttribute('href'), '#');
+  assert.equal(selected.getAttribute('class'), 'icon disabled');
+});
