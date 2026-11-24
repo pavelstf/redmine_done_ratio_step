@@ -129,27 +129,19 @@
   }
 
   function replaceDoneRatioInUrl(url, value) {
-    // Handles patterns like:
-    // - issue[done_ratio]=10  (encoded or not)
-    // - done_ratio=10
-    // - issue%5Bdone_ratio%5D=10
-    var v = String(value);
-
-    // encoded form
-    url = url.replace(/(issue%5Bdone_ratio%5D=)\d+/i, "$1" + v);
-    // bracket form
-    url = url.replace(/(issue\[done_ratio\]=)\d+/i, "$1" + v);
-    // simple
-    url = url.replace(/(done_ratio=)\d+/i, "$1" + v);
-
-    return url;
+    // Match only a top-level action parameter, never text inside back_url.
+    var hashIndex = url.indexOf("#");
+    var fragment = hashIndex === -1 ? "" : url.slice(hashIndex);
+    var action = hashIndex === -1 ? url : url.slice(0, hashIndex);
+    return action.replace(
+      /([?&](?:issue%5Bdone_ratio%5D|issue\[done_ratio\]|done_ratio)=)\d+(?=&|$)/gi,
+      function (_match, prefix) { return prefix + String(value); }
+    ) + fragment;
   }
 
   function isDoneRatioHref(href) {
     href = href || "";
-    return href.indexOf("done_ratio") !== -1 ||
-      href.indexOf("issue%5Bdone_ratio%5D") !== -1 ||
-      href.indexOf("issue[done_ratio]") !== -1;
+    return /[?&](?:issue%5Bdone_ratio%5D|issue\[done_ratio\]|done_ratio)=\d+(?=&|$)/i.test(href.split("#")[0]);
   }
 
   function findContextMenuSubmenuList(menu, template) {
@@ -169,8 +161,8 @@
     var menu = document.getElementById("context-menu");
     if (!menu) return;
 
-    // Find all anchors that look like "set done ratio"
-    var anchors = menu.querySelectorAll("a[href*='done_ratio'], a[href*='issue%5Bdone_ratio%5D'], a[href*='issue[done_ratio]']");
+    // Inspect action parameters rather than substrings in encoded return URLs.
+    var anchors = menu.querySelectorAll("a[href]");
     if (!anchors || !anchors.length) return;
 
     // Use the first matching link as a template for URL structure

@@ -14,6 +14,7 @@ from the default 10% increments to a configurable step (default **5%**).
   - Issues list context menu (% Done submenu)
 
 ## Bugfixes
+- **1.0.5** (staging candidate): Prevents filtered return URLs from causing the Status context submenu to be replaced with percentage choices.
 - **1.0.4**: Prevents broken context menu visualization when all issues are selected and Redmine exposes `% Done` links outside a nested submenu.
 - **1.0.3**: Scopes preserved issue `done_ratio` values to the issue form select and clarifies the required deployment folder name.
 - **1.0.2**: Also rebuilds `% Done` values in the issues list context menu to match the configured step.
